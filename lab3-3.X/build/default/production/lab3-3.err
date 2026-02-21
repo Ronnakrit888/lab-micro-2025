@@ -1,0 +1,5 @@
+Message[301] C:\PROGRAM FILES (X86)\MICROCHIP\MPLABX\V5.35\MPASMX\P16F628.INC 34 : MESSAGE: (Processor-header file mismatch.  Verify selected processor.)
+Warning[205] C:\USERS\NBODT\MPLABXPROJECTS\LAB3-3.X\LAB3-3.ASM 2 : Found directive in column 1. (__CONFIG)
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB3-3.X\LAB3-3.ASM 15 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB3-3.X\LAB3-3.ASM 17 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB3-3.X\LAB3-3.ASM 20 : Register in operand not in bank 0.  Ensure that bank bits are correct.

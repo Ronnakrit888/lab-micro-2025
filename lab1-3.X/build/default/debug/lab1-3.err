@@ -1,0 +1,5 @@
+Message[301] C:\PROGRAM FILES (X86)\MICROCHIP\MPLABX\V5.35\MPASMX\P16F628.INC 34 : MESSAGE: (Processor-header file mismatch.  Verify selected processor.)
+Warning[207] C:\USERS\NBODT\MPLABXPROJECTS\LAB1-3.X\LAB1-3.ASM 6 : Found label after column 1. (int_count)
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB1-3.X\LAB1-3.ASM 16 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB1-3.X\LAB1-3.ASM 18 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB1-3.X\LAB1-3.ASM 20 : Register in operand not in bank 0.  Ensure that bank bits are correct.

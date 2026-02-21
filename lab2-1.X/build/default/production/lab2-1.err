@@ -1,0 +1,6 @@
+Warning[205] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-1.X\LAB2-1.ASM 1 : Found directive in column 1. (list)
+Warning[205] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-1.X\LAB2-1.ASM 4 : Found directive in column 1. (__CONFIG)
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-1.X\LAB2-1.ASM 30 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-1.X\LAB2-1.ASM 31 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[305] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-1.X\LAB2-1.ASM 87 : Using default destination of 1 (file).
+Message[305] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-1.X\LAB2-1.ASM 89 : Using default destination of 1 (file).

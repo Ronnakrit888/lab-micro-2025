@@ -1,0 +1,6 @@
+Warning[215] C:\USERS\NBODT\MPLABXPROJECTS\LAB5-1.X\LAB5-1.ASM 1 : Processor superseded by command line.  Verify processor symbol.
+Message[301] C:\PROGRAM FILES (X86)\MICROCHIP\MPLABX\V5.35\MPASMX\P16F877.INC 34 : MESSAGE: (Processor-header file mismatch.  Verify selected processor.)
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB5-1.X\LAB5-1.ASM 7 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB5-1.X\LAB5-1.ASM 12 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB5-1.X\LAB5-1.ASM 13 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB5-1.X\LAB5-1.ASM 27 : Register in operand not in bank 0.  Ensure that bank bits are correct.

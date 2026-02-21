@@ -1,0 +1,7 @@
+Warning[205] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-2.X\LAB2-2.ASM 1 : Found directive in column 1. (list)
+Message[301] C:\PROGRAM FILES (X86)\MICROCHIP\MPLABX\V5.35\MPASMX\P16F628.INC 34 : MESSAGE: (Processor-header file mismatch.  Verify selected processor.)
+Warning[205] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-2.X\LAB2-2.ASM 4 : Found directive in column 1. (__CONFIG)
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-2.X\LAB2-2.ASM 73 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-2.X\LAB2-2.ASM 75 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[305] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-2.X\LAB2-2.ASM 131 : Using default destination of 1 (file).
+Message[305] C:\USERS\NBODT\MPLABXPROJECTS\LAB2-2.X\LAB2-2.ASM 133 : Using default destination of 1 (file).

@@ -1,0 +1,48 @@
+MPLINK 5.09, LINKER
+Linker Map File - Created Sat Feb 21 15:37:23 2026
+
+                                 Section Info
+                  Section       Type    Address   Location Size(Bytes)
+                ---------  ---------  ---------  ---------  ---------
+                   .org_0       code   0x000000    program   0x000086
+                   .cinit    romdata   0x000043    program   0x000004
+.config_2007_BUILD/DEFAULT/PRODUCTION/LAB2-1.       code   0x002007    program   0x000002
+
+
+
+                              Program Memory Usage 
+                               Start         End      
+                           ---------   ---------      
+                            0x000000    0x000044      
+                            0x002007    0x002007      
+            70 out of 2182 program addresses used, program memory utilization is 3%
+
+
+
+                              Symbols - Sorted by Name
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+             _.org_0_0009   0x000009    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                    delay   0x00003b    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                   enable   0x000037    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                 init_lcd   0x00000a    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                    loop1   0x00003d    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                    loop2   0x00003e    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                  wr_data   0x00002c    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                   wr_ins   0x000021    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+
+
+
+                              Symbols - Sorted by Address
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+             _.org_0_0009   0x000009    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                 init_lcd   0x00000a    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                   wr_ins   0x000021    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                  wr_data   0x00002c    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                   enable   0x000037    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                    delay   0x00003b    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                    loop1   0x00003d    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+                    loop2   0x00003e    program     static C:\Users\NBODT\MPLABXProjects\lab2-1.X\lab2-1.asm
+
+
