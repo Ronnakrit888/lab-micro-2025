@@ -1,0 +1,530 @@
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Warning[205]: Found directive in column 1. (list)
+                      00001 list p=16f628a
+                      00002     #include <p16f628a.inc>
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Jan 06 2020
+                      00005 ;  MPASM PIC16F628A processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2020 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00386         LIST
+2007   3F62           00003     __CONFIG _HS_OSC & _WDT_OFF & _PWRTE_ON & _LVP_OFF
+                      00004 
+                      00005 ; --- Register Definitions ---
+                      00006 #define RS  PORTA, 0
+                      00007 #define E   PORTA, 1
+                      00008 
+                      00009 ; --- Variables ---
+  00000020            00010 W_TEMP    equ 0x20
+  00000021            00011 S_TEMP    equ 0x21
+  00000022            00012 ctr_tmr   equ 0x22    ; Software prescaler for 1 second
+  00000023            00013 sec_count equ 0x23    ; The actual seconds (0-255)
+  00000024            00014 rb0_count equ 0x24    ; Count how many times RB0 was pressed
+  00000025            00015 TEMP_VAL  equ 0x25
+  00000026            00016 HUNDREDS  equ 0x26
+  00000027            00017 TENS      equ 0x27
+  00000028            00018 ONES      equ 0x28
+                      00019 
+  00000029            00020 COM       equ 0x29
+  00000030            00021 DAT       equ 0x30
+  00000031            00022 count1    equ 0x31
+                      00023 
+                      00024     org 0x00
+0000   2???           00025     goto main
+                      00026 
+                      00027     org 0x004
+0004   2???           00028     goto isr
+                      00029 
+0005                  00030 main
+0005   3007           00031     movlw   0x07
+0006   009F           00032     movwf   CMCON       ; Set PORTA to digital
+                      00033     
+0007   2???           00034     call    init_ports
+0008   2???           00035     call    init_lcd
+0009   2???           00036     call    init_ints   ; Setup Timer0 and External RB0
+                      00037     
+000A   01A3           00038     clrf    sec_count
+000B   01A4           00039     clrf    rb0_count
+000C   01A2           00040     clrf    ctr_tmr
+                      00041 
+000D                  00042 main_loop
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00043     ; Line 1: Display Seconds
+000D   3080           00044     movlw   b'10000000' ; LCD Row 1
+000E   2???           00045     call    wr_ins
+000F   0823           00046     movf    sec_count, W
+0010   2???           00047     call    display_3_digits
+                      00048 
+                      00049     ; Line 2: Display RB0 Reset count
+0011   30C0           00050     movlw   b'11000000' ; LCD Row 2
+0012   2???           00051     call    wr_ins
+0013   0824           00052     movf    rb0_count, W
+0014   2???           00053     call    display_3_digits
+                      00054 
+0015   2???           00055     goto    main_loop
+                      00056 
+                      00057 ; --- Interrupt Service Routine ---
+0016                  00058 isr
+                      00059     ; Context Saving
+0016   00A0           00060     movwf   W_TEMP
+0017   0E03           00061     swapf   STATUS, W
+0018   00A1           00062     movwf   S_TEMP
+                      00063 
+                      00064     ; Check if Timer0 Interrupt
+0019   190B           00065     btfsc   INTCON, T0IF
+001A   2???           00066     goto    timer_logic
+                      00067 
+                      00068     ; Check if RB0 External Interrupt
+001B   188B           00069     btfsc   INTCON, INTF
+001C   2???           00070     goto    rb0_logic
+                      00071 
+001D   2???           00072     goto    exit_isr
+                      00073 
+001E                  00074 timer_logic
+                      00075     
+                      00076     ; Basic 4 Mhz
+                      00077     ; Auto Prescale 4 / 4 = 1 Mhz
+                      00078     ; 1 Mhz = 1 us
+                      00079     ; 1 us * 32 = 32 us
+                      00080     ; 5000 us / 32 us = 156.25 ticks
+                      00081     ; 256 - 156 = 100
+001E   3064           00082     movlw   .100        ; Reload Timer0 for ~5ms
+001F   0081           00083     movwf   TMR0
+0020   110B           00084     bcf     INTCON, T0IF
+                      00085     
+0021   0AA2           00086     incf    ctr_tmr, F
+0022   30C8           00087     movlw   .200        ; 200 * 5ms = 1 Second
+0023   0222           00088     subwf   ctr_tmr, W
+0024   1D03           00089     btfss   STATUS, Z
+0025   2???           00090     goto    exit_isr
+                      00091     
+0026   01A2           00092     clrf    ctr_tmr     ; One second has passed
+0027   0AA3           00093     incf    sec_count, F
+0028   2???           00094     goto    exit_isr
+                      00095 
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0029                  00096 rb0_logic
+0029   01A3           00097     clrf    sec_count   ; Reset the timer to 0
+002A   0AA4           00098     incf    rb0_count, F ; Count the reset event
+002B   108B           00099     bcf     INTCON, INTF ; Clear External Flag
+                      00100     ; Note: In real hardware, add a small delay here for debounce
+                      00101 
+002C                  00102 exit_isr
+002C   0E21           00103     swapf   S_TEMP, W
+002D   0083           00104     movwf   STATUS
+002E   0EA0           00105     swapf   W_TEMP, F
+002F   0E20           00106     swapf   W_TEMP, W
+0030   0009           00107     retfie
+                      00108 
+                      00109 ; --- Initialization ---
+0031                  00110 init_ports
+0031   1683 1303      00111     banksel TRISA
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0033   0185           00112     clrf    TRISA       ; PORTA = Out
+0034   3001           00113     movlw   0x01        ; RB0 = In, others = Out
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0035   0086           00114     movwf   TRISB
+                      00115     
+0036   3084           00116     movlw   b'10000100' ; Prescale 1:32
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0037   0081           00117     movwf   OPTION_REG
+0038   1283 1303      00118     banksel PORTB
+003A   0008           00119     return
+                      00120 
+003B                  00121 init_ints
+003B   3064           00122     movlw   .100
+003C   0081           00123     movwf   TMR0
+003D   30B0           00124     movlw   b'10110000' ; GIE=1, T0IE=1, INTE=1 (RB0)
+003E   008B           00125     movwf   INTCON
+003F   0008           00126     return
+                      00127 
+                      00128 ; --- LCD Support (4-bit Mode) ---
+0040                  00129 display_3_digits
+0040   00A5           00130     movwf   TEMP_VAL
+0041   01A6           00131     clrf    HUNDREDS
+0042   01A7           00132     clrf    TENS
+0043                  00133 d_100
+0043   3064           00134     movlw   .100
+0044   0225           00135     subwf   TEMP_VAL, W
+0045   1C03           00136     btfss   STATUS, C
+0046   2???           00137     goto    d_10
+0047   00A5           00138     movwf   TEMP_VAL
+0048   0AA6           00139     incf    HUNDREDS, F
+0049   2???           00140     goto    d_100
+004A                  00141 d_10
+004A   300A           00142     movlw   .10
+004B   0225           00143     subwf   TEMP_VAL, W
+004C   1C03           00144     btfss   STATUS, C
+004D   2???           00145     goto    d_1
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+004E   00A5           00146     movwf   TEMP_VAL
+004F   0AA7           00147     incf    TENS, F
+0050   2???           00148     goto    d_10
+0051                  00149 d_1
+0051   0826           00150     movf    HUNDREDS, W
+0052   3E30           00151     addlw   0x30
+0053   2???           00152     call    wr_data
+0054   0827           00153     movf    TENS, W
+0055   3E30           00154     addlw   0x30
+0056   2???           00155     call    wr_data
+0057   0825           00156     movf    TEMP_VAL, W
+0058   3E30           00157     addlw   0x30
+0059   2???           00158     call    wr_data
+005A   0008           00159     return
+                      00160 
+005B                  00161 init_lcd
+005B   2???           00162     call    delay_short
+005C   3032           00163     movlw   b'00110010' ; 4-bit mode
+005D   2???           00164     call    wr_ins
+005E   3028           00165     movlw   b'00101000' ; 2 lines
+005F   2???           00166     call    wr_ins
+0060   300C           00167     movlw   b'00001100' ; Display ON
+0061   2???           00168     call    wr_ins
+0062   3001           00169     movlw   b'00000001' ; Clear
+0063   2???           00170     call    wr_ins
+0064   0008           00171     return
+                      00172 
+0065                  00173 wr_ins
+0065   1005           00174     bcf     RS
+0066   2???           00175     goto    lcd_send
+0067                  00176 wr_data
+0067   1405           00177     bsf     RS
+0068                  00178 lcd_send
+0068   00B0           00179     movwf   DAT
+0069   39F0           00180     andlw   0xF0
+006A   0086           00181     movwf   PORTB
+006B   1485           00182     bsf     E
+006C   0000           00183     nop
+006D   1085           00184     bcf     E
+006E   0E30           00185     swapf   DAT, W
+006F   39F0           00186     andlw   0xF0
+0070   0086           00187     movwf   PORTB
+0071   1485           00188     bsf     E
+0072   0000           00189     nop
+0073   1085           00190     bcf     E
+0074   2???           00191     call    delay_short
+0075   0008           00192     return
+                      00193 
+0076                  00194 delay_short
+0076   30FA           00195     movlw   .250
+0077   00B1           00196     movwf   count1
+0078   0BB1           00197 lp  decfsz  count1, F
+0079   2???           00198     goto    lp
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+007A   0008           00199     return
+                      00200 
+3F62                  00201     end
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  6
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADDEN                             00000003
+ADEN                              00000003
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000001F
+CMIE                              00000006
+CMIF                              00000006
+COM                               00000029
+CREN                              00000004
+CSRC                              00000007
+DAT                               00000030
+DATA_CP_OFF                       00003FFF
+DATA_CP_ON                        00003EFF
+DC                                00000001
+E                                 PORTA, 1
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+GIE                               00000007
+HUNDREDS                          00000026
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+NOT_BO                            00000000
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OERR                              00000001
+ONES                              00000028
+OPTION_REG                        00000081
+OSCF                              00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PORTA                             00000005
+PORTB                             00000006
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RA6                               00000006
+RA7                               00000007
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+RS                                PORTA, 0
+RX9                               00000006
+RX9D                              00000000
+SPBRG                             00000099
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+SPEN                              00000007
+SREN                              00000005
+STATUS                            00000003
+SYNC                              00000004
+S_TEMP                            00000021
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1OSCEN                           00000003
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TEMP_VAL                          00000025
+TENS                              00000027
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISA6                            00000006
+TRISA7                            00000007
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE  9
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TRISB7                            00000007
+TRMT                              00000001
+TX9                               00000006
+TX9D                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             0000009F
+VREN                              00000007
+VROE                              00000006
+VRR                               00000005
+W                                 00000000
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+W_TEMP                            00000020
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00001FFF
+_DEVID1                           00002006
+_ER_OSC_CLKOUT                    00003FFF
+_ER_OSC_NOCLKOUT                  00003FFE
+_EXTCLK_OSC                       00003FEF
+_FOSC_ECIO                        00003FEF
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FEE
+_FOSC_INTOSCCLK                   00003FFD
+_FOSC_INTOSCIO                    00003FFC
+_FOSC_LP                          00003FEC
+_FOSC_XT                          00003FED
+_HS_OSC                           00003FEE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTOSC_OSC_CLKOUT                00003FFD
+_INTOSC_OSC_NOCLKOUT              00003FFC
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+MPASM 5.87           COUNTER-UNTIL-RESET.ASM   2-23-2026  17:26:10         PAGE 10
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_LP_OSC                           00003FEC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC_CLKOUT                    00003FFF
+_RC_OSC_NOCLKOUT                  00003FFE
+_WDTE_OFF                         00003FFB
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FED
+__16F628A                         00000001
+count1                            00000031
+ctr_tmr                           00000022
+d_1                               00000051
+d_10                              0000004A
+d_100                             00000043
+delay_short                       00000076
+display_3_digits                  00000040
+exit_isr                          0000002C
+init_ints                         0000003B
+init_lcd                          0000005B
+init_ports                        00000031
+isr                               00000016
+lcd_send                          00000068
+lp                                00000078
+main                              00000005
+main_loop                         0000000D
+rb0_count                         00000024
+rb0_logic                         00000029
+sec_count                         00000023
+timer_logic                       0000001E
+wr_data                           00000067
+wr_ins                            00000065
+
+Errors   :     0
+Warnings :     1 reported,     0 suppressed
+Messages :     3 reported,     0 suppressed
+
+
