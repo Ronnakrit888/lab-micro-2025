@@ -1,0 +1,519 @@
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Warning[205]: Found directive in column 1. (list)
+                      00001 list p=16f628a
+                      00002     #include <p16f628a.inc>
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Jan 06 2020
+                      00005 ;  MPASM PIC16F628A processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2020 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00386         LIST
+                      00003     
+2007   3F6A           00004     __CONFIG _HS_OSC & _WDT_OFF & _MCLRE_ON & _CP_OFF & _BOREN_ON & _LVP_OFF
+                      00005     
+                      00006 ; --- Define Pins ---
+                      00007 #define RS  PORTA, 0
+                      00008 #define E   PORTA, 1
+                      00009 
+                      00010 ; --- Variables (RAM) ---
+  00000020            00011 COM      equ 0x20
+  00000021            00012 DAT      equ 0x21
+  00000022            00013 counter  equ 0x22
+  00000023            00014 count1   equ 0x23
+  00000024            00015 count2   equ 0x24
+  00000025            00016 W_TEMP   equ 0x25    ; ???????????? W ??????? Interrupt
+  00000026            00017 S_TEMP   equ 0x26    ; ???????????? STATUS ??????? Interrupt
+  00000027            00018 HUNDREDS equ 0x27    ; ???????????????
+  00000028            00019 TENS     equ 0x28    ; ??????????????
+  00000029            00020 ONES     equ 0x29    ; ????????????????
+  0000002A            00021 TEMP_VAL equ 0x2A    ; ???????????????????????
+                      00022 
+                      00023     org 0x000
+0000   2???           00024     goto main
+                      00025 
+                      00026     org 0x004        ; Interrupt Vector
+0004   2???           00027     goto int_serv
+                      00028 
+0005                  00029 main
+0005   3007           00030     movlw   0x07
+0006   009F           00031     movwf   CMCON    ; ??? Comparator ??? PORTA ???? Digital
+                      00032     
+0007   2???           00033     call    init_lcd
+0008   2???           00034     call    init_interrupt
+                      00035     
+0009   01A2           00036     clrf    counter  ; ??????????? 0
+                      00037 
+000A                  00038 main_loop
+                      00039     ; ???????????????????? 1
+000A   3080           00040     movlw   b'10000000' ; ?????????????????????? 1 ???? 1
+000B   2???           00041     call    wr_ins
+                      00042     
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+000C   3043           00043     movlw   'C'
+000D   2???           00044     call    wr_data
+000E   306F           00045     movlw   'o'
+000F   2???           00046     call    wr_data
+0010   3075           00047     movlw   'u'
+0011   2???           00048     call    wr_data
+0012   306E           00049     movlw   'n'
+0013   2???           00050     call    wr_data
+0014   3074           00051     movlw   't'
+0015   2???           00052     call    wr_data
+0016   303A           00053     movlw   ':'
+0017   2???           00054     call    wr_data
+                      00055 
+                      00056     ; ????????????? counter
+0018   2???           00057     call    display_counter
+                      00058     
+0019   2???           00059     goto    main_loop
+                      00060 
+                      00061 ; --- LCD Initialization ---
+001A                  00062 init_lcd
+001A   1683 1303      00063     banksel TRISA
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001C   0185           00064     clrf    TRISA       ; PORTA ???? Output
+001D   3001           00065     movlw   b'00000001' ; RB0 ???? Input (??????)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001E   0086           00066     movwf   TRISB
+001F   1283 1303      00067     banksel PORTA
+                      00068     
+0021   2???           00069     call    delay
+0022   3033           00070     movlw   b'00110011' ; Reset sequence
+0023   2???           00071     call    wr_ins
+0024   3032           00072     movlw   b'00110010' ; Set 4-bit mode
+0025   2???           00073     call    wr_ins
+0026   3028           00074     movlw   b'00101000' ; 2 lines, 5x7 font
+0027   2???           00075     call    wr_ins
+0028   300C           00076     movlw   b'00001100' ; Display ON, Cursor OFF
+0029   2???           00077     call    wr_ins
+002A   3001           00078     movlw   b'00000001' ; Clear screen
+002B   2???           00079     call    wr_ins
+002C   0008           00080     return
+                      00081 
+                      00082 ; --- Interrupt Setup ---
+002D                  00083 init_interrupt
+002D   178B           00084     bsf     INTCON, GIE  ; Global Interrupt Enable
+002E   160B           00085     bsf     INTCON, INTE ; External Interrupt Enable (RB0)
+002F   108B           00086     bcf     INTCON, INTF ; Clear Flag
+0030   0008           00087     return
+                      00088 
+                      00089 ; --- Interrupt Service Routine ---
+0031                  00090 int_serv
+                      00091     ; 1. Context Saving
+0031   00A5           00092     movwf   W_TEMP
+0032   0E03           00093     swapf   STATUS, W
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0033   00A6           00094     movwf   S_TEMP
+                      00095 
+                      00096     ; 2. Check source
+0034   1C8B           00097     btfss   INTCON, INTF
+0035   2???           00098     goto    exit_int
+                      00099 
+                      00100     ; 3. Logic: Increment Counter
+0036   0AA2           00101     incf    counter, F
+                      00102 
+                      00103     ; 4. Clear Flag
+0037   108B           00104     bcf     INTCON, INTF
+                      00105 
+0038                  00106 exit_int
+                      00107     ; 5. Context Restore
+0038   0E26           00108     swapf   S_TEMP, W
+0039   0083           00109     movwf   STATUS
+003A   0EA5           00110     swapf   W_TEMP, F
+003B   0E25           00111     swapf   W_TEMP, W
+003C   0009           00112     retfie
+                      00113 
+                      00114 ; --- Display Logic (Binary to ASCII) ---
+003D                  00115 display_counter
+003D   0822           00116     movf    counter, W
+003E   00AA           00117     movwf   TEMP_VAL
+003F   01A7           00118     clrf    HUNDREDS
+0040   01A8           00119     clrf    TENS
+                      00120 
+                      00121     ; ??????????
+0041                  00122 find_100
+0041   3064           00123     movlw   .100
+0042   022A           00124     subwf   TEMP_VAL, W
+0043   1C03           00125     btfss   STATUS, C
+0044   2???           00126     goto    find_10
+0045   00AA           00127     movwf   TEMP_VAL
+0046   0AA7           00128     incf    HUNDREDS, F
+0047   2???           00129     goto    find_100
+                      00130 
+                      00131     ; ?????????
+0048                  00132 find_10
+0048   300A           00133     movlw   .10
+0049   022A           00134     subwf   TEMP_VAL, W
+004A   1C03           00135     btfss   STATUS, C
+004B   2???           00136     goto    find_1
+004C   00AA           00137     movwf   TEMP_VAL
+004D   0AA8           00138     incf    TENS, F
+004E   2???           00139     goto    find_10
+                      00140 
+004F                  00141 find_1
+004F   082A           00142     movf    TEMP_VAL, W
+0050   00A9           00143     movwf   ONES
+                      00144 
+                      00145     ; ????????? LCD (??? 0x30 ??????????????? ASCII)
+0051   0827           00146     movf    HUNDREDS, W
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0052   3E30           00147     addlw   0x30
+0053   2???           00148     call    wr_data
+0054   0828           00149     movf    TENS, W
+0055   3E30           00150     addlw   0x30
+0056   2???           00151     call    wr_data
+0057   0829           00152     movf    ONES, W
+0058   3E30           00153     addlw   0x30
+0059   2???           00154     call    wr_data
+005A   0008           00155     return
+                      00156 
+                      00157 ; --- LCD Functions (4-bit Mode) ---
+005B                  00158 wr_ins
+005B   00A0           00159     movwf   COM
+005C   1005           00160     bcf     RS          ; Command mode
+005D   2???           00161     goto    send_nibbles
+                      00162 
+005E                  00163 wr_data
+005E   00A0           00164     movwf   COM
+005F   1405           00165     bsf     RS          ; Data mode
+                      00166 
+0060                  00167 send_nibbles
+                      00168     ; Send High Nibble
+0060   0820           00169     movf    COM, W
+0061   39F0           00170     andlw   0xF0
+0062   0086           00171     movwf   PORTB
+0063   2???           00172     call    strobe
+                      00173     ; Send Low Nibble
+0064   0E20           00174     swapf   COM, W
+0065   39F0           00175     andlw   0xF0
+0066   0086           00176     movwf   PORTB
+0067   2???           00177     call    strobe
+0068   2???           00178     call    delay
+0069   0008           00179     return
+                      00180 
+006A                  00181 strobe
+006A   1485           00182     bsf     E
+006B   0000           00183     nop
+006C   1085           00184     bcf     E
+006D   0008           00185     return
+                      00186 
+006E                  00187 delay
+006E   3014           00188     movlw   .20
+006F   00A3           00189     movwf   count1
+0070                  00190 d_loop1
+0070   01A4           00191     clrf    count2
+0071                  00192 d_loop2
+0071   0BA4           00193     decfsz  count2, F
+0072   2???           00194     goto    d_loop2
+0073   0BA3           00195     decfsz  count1, F
+0074   2???           00196     goto    d_loop1
+0075   0008           00197     return
+                      00198 
+3F6A                  00199     end
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  5
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADDEN                             00000003
+ADEN                              00000003
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000001F
+CMIE                              00000006
+CMIF                              00000006
+COM                               00000020
+CREN                              00000004
+CSRC                              00000007
+DAT                               00000021
+DATA_CP_OFF                       00003FFF
+DATA_CP_ON                        00003EFF
+DC                                00000001
+E                                 PORTA, 1
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+GIE                               00000007
+HUNDREDS                          00000027
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+NOT_BO                            00000000
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  6
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OERR                              00000001
+ONES                              00000029
+OPTION_REG                        00000081
+OSCF                              00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PORTA                             00000005
+PORTB                             00000006
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RA6                               00000006
+RA7                               00000007
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+RS                                PORTA, 0
+RX9                               00000006
+RX9D                              00000000
+SPBRG                             00000099
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+SPEN                              00000007
+SREN                              00000005
+STATUS                            00000003
+SYNC                              00000004
+S_TEMP                            00000026
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1OSCEN                           00000003
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TEMP_VAL                          0000002A
+TENS                              00000028
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISA6                            00000006
+TRISA7                            00000007
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TRISB7                            00000007
+TRMT                              00000001
+TX9                               00000006
+TX9D                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             0000009F
+VREN                              00000007
+VROE                              00000006
+VRR                               00000005
+W                                 00000000
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+W_TEMP                            00000025
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00001FFF
+_DEVID1                           00002006
+_ER_OSC_CLKOUT                    00003FFF
+_ER_OSC_NOCLKOUT                  00003FFE
+_EXTCLK_OSC                       00003FEF
+_FOSC_ECIO                        00003FEF
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FEE
+_FOSC_INTOSCCLK                   00003FFD
+_FOSC_INTOSCIO                    00003FFC
+_FOSC_LP                          00003FEC
+_FOSC_XT                          00003FED
+_HS_OSC                           00003FEE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTOSC_OSC_CLKOUT                00003FFD
+_INTOSC_OSC_NOCLKOUT              00003FFC
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+MPASM 5.87                     REAL-TIME.ASM   2-23-2026  17:00:29         PAGE  9
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_LP_OSC                           00003FEC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC_CLKOUT                    00003FFF
+_RC_OSC_NOCLKOUT                  00003FFE
+_WDTE_OFF                         00003FFB
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FED
+__16F628A                         00000001
+count1                            00000023
+count2                            00000024
+counter                           00000022
+d_loop1                           00000070
+d_loop2                           00000071
+delay                             0000006E
+display_counter                   0000003D
+exit_int                          00000038
+find_1                            0000004F
+find_10                           00000048
+find_100                          00000041
+init_interrupt                    0000002D
+init_lcd                          0000001A
+int_serv                          00000031
+main                              00000005
+main_loop                         0000000A
+send_nibbles                      00000060
+strobe                            0000006A
+wr_data                           0000005E
+wr_ins                            0000005B
+
+Errors   :     0
+Warnings :     1 reported,     0 suppressed
+Messages :     2 reported,     0 suppressed
+
+
